@@ -70,15 +70,19 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a creative recipe generator. Generate exactly ${n_suggestions} distinct, delicious recipes based on the user's input. For each recipe, provide:
+            content: `You are a creative recipe generator. Generate up to ${n_suggestions} distinct, delicious recipes based on the user's input. Aim for ${n_suggestions} recipes, but if ingredients are limited, you can suggest fewer (minimum 1).
+
+For each recipe, provide:
 - title: A catchy, descriptive name
 - summary: A one-line description (max 90 characters)
 - content: An object with:
   - ingredients: Array of ingredient strings with measurements
   - steps: Array of detailed cooking instruction strings
   - notes: Optional array of tips, variations, or serving suggestions
-  
-Return ONLY valid JSON with this exact structure:
+
+CRITICAL: Return ONLY the raw JSON object, no markdown formatting, no code blocks, no backticks.
+
+Format:
 {
   "recipes": [
     {
@@ -126,7 +130,11 @@ Return ONLY valid JSON with this exact structure:
     let recipes;
     
     try {
-      const content = recipesData.choices[0].message.content;
+      let content = recipesData.choices[0].message.content;
+      
+      // Strip markdown code blocks if present
+      content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
       const parsed = JSON.parse(content);
       recipes = parsed.recipes;
     } catch (e) {
@@ -134,9 +142,16 @@ Return ONLY valid JSON with this exact structure:
       throw new Error("Invalid recipe format received from AI");
     }
 
-    if (!recipes || recipes.length !== n_suggestions) {
-      throw new Error(`Expected ${n_suggestions} recipes but got ${recipes?.length || 0}`);
+    if (!recipes || recipes.length === 0) {
+      throw new Error("No recipes were generated");
     }
+
+    // Allow flexibility: if AI returns fewer recipes, that's ok as long as we have at least 1
+    if (recipes.length > n_suggestions) {
+      recipes = recipes.slice(0, n_suggestions);
+    }
+    
+    console.log(`Successfully generated ${recipes.length} recipes`);
 
     // Step 2: Calculate popularity scores
     const scoringResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -180,7 +195,9 @@ Return ONLY a JSON array of numbers: [score1, score2, ...]`
       let scores;
       
       try {
-        const content = scoringData.choices[0].message.content;
+        let content = scoringData.choices[0].message.content;
+        // Strip markdown code blocks if present
+        content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         scores = JSON.parse(content);
       } catch (e) {
         console.error("Failed to parse scores, using defaults");
