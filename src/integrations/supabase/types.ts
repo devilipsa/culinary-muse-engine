@@ -14,7 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      sessions: {
+        Row: {
+          created_at: string
+          id: string
+          n_suggestions: number
+          prompt: string
+          selected_index: number
+          suggestions_json: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          n_suggestions: number
+          prompt: string
+          selected_index?: number
+          suggestions_json: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          n_suggestions?: number
+          prompt?: string
+          selected_index?: number
+          suggestions_json?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      shares: {
+        Row: {
+          created_at: string
+          id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shares_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

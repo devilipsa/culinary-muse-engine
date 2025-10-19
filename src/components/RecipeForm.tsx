@@ -3,20 +3,22 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface RecipeFormProps {
-  onSubmit: (ingredients: string, preferences: string) => void;
+  onSubmit: (ingredients: string, preferences: string, nSuggestions: number) => void;
   isLoading?: boolean;
 }
 
 export const RecipeForm = ({ onSubmit, isLoading }: RecipeFormProps) => {
   const [ingredients, setIngredients] = useState("");
   const [preferences, setPreferences] = useState("");
+  const [nSuggestions, setNSuggestions] = useState<number>(5);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (ingredients.trim()) {
-      onSubmit(ingredients, preferences);
+      onSubmit(ingredients, preferences, nSuggestions);
     }
   };
 
@@ -55,6 +57,24 @@ export const RecipeForm = ({ onSubmit, isLoading }: RecipeFormProps) => {
             onChange={(e) => setPreferences(e.target.value)}
             className="bg-background border-border text-foreground placeholder:text-muted-foreground"
           />
+        </div>
+
+        <div>
+          <Label htmlFor="n-suggestions" className="text-foreground font-semibold mb-2 block">
+            Number of Suggestions
+          </Label>
+          <Select
+            value={nSuggestions.toString()}
+            onValueChange={(value) => setNSuggestions(parseInt(value))}
+          >
+            <SelectTrigger className="bg-background border-border text-foreground">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="3">3 recipes</SelectItem>
+              <SelectItem value="5">5 recipes</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <Button
