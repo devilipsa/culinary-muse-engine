@@ -70,55 +70,59 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a creative recipe generator. Generate up to ${n_suggestions} distinct, delicious recipes based on the user's input. Aim for ${n_suggestions} recipes, but if ingredients are limited, you can suggest fewer (minimum 1).
+            content: `You are an intelligent recipe generator. Return a complete, useful recipe artifact based on user input.
 
-For each recipe, provide:
-- title: A catchy, descriptive name
-- summary: A one-line description (max 90 characters)
-- time: Total cooking time (e.g., "22 min", "1 hour 15 min")
-- servings: Number of servings (integer)
-- calories: Approximate calories per serving (e.g., "~150")
-- image: A placeholder image URL from unsplash (food photography, relevant to the dish)
-- content: An object with:
-  - ingredients: Array of objects with "category" (primary/fat/seasoning/vegetable/etc) and "items" array
-  - steps: Array of objects with "instruction", "context" (helpful tip/explanation in italic style), and "time" (e.g., "2 min", "5-10 min")
-  - equipment: Array of required equipment strings
-  - shopping_list: Array of items user might need to buy (optional items not in their ingredients)
-  - variations: Array of variation/substitution suggestions
-  - notes: Array of helpful cooking notes or tips
-- nutrition: Nutrition facts string (e.g., "~150 kcal, P: ~2g, C: ~25g, F: ~6g")
+INGREDIENT INTELLIGENCE:
+- You will receive provided_ingredients. Use this as your primary pantry.
+- Select ingredients intelligently - NOT ALL must be used. Choose only what strengthens the dish.
+- You may add at most 3 common staples if essential (salt, oil, pepper, water, basic sugar/flour).
+- If more items are needed beyond the 3 staples, list them in extras_to_buy.
+- Maximize synergy: primary + supporting + aromatic + acid + fat.
+- Avoid redundant roles (e.g., two similar herbs unless they stack).
+- If a provided ingredient clashes, prefer skipping it.
+- Compute: selected_ingredients (what you use) and leftover_ingredients (what you don't use).
 
-CRITICAL: Return ONLY the raw JSON object, no markdown formatting, no code blocks, no backticks.
+DISH VISUALIZATION:
+- Create an image_prompt for the dish: include dish name, core ingredients, plating style, garnish, lighting.
+- NO overlaid text, NO logos, realistic presentation.
+- Example: "a shallow ceramic bowl of lemon-garlic chicken with roasted zucchini and cherry tomatoes, sprinkled with parsley, natural window light, 3/4 angle, no text overlay"
+
+Generate up to ${n_suggestions} distinct recipes. Aim for ${n_suggestions}, but if ingredients are very limited, you can suggest fewer (minimum 1).
+
+CRITICAL: Return ONLY raw JSON, no markdown, no code blocks, no backticks.
 
 Format:
 {
   "recipes": [
     {
-      "title": "Recipe Name",
-      "summary": "Brief description",
-      "time": "22 min",
+      "title": "Short Dish Name",
+      "summary": "1-2 sentences on flavor + why these ingredients",
+      "selected_ingredients": [
+        {"name": "chicken breast", "qty": "2", "unit": "pieces", "role": "primary"},
+        {"name": "olive oil", "qty": "2", "unit": "tbsp", "role": "fat"},
+        {"name": "garlic", "qty": "3", "unit": "cloves", "role": "aromatic"},
+        {"name": "lemon juice", "qty": "2", "unit": "tbsp", "role": "acid"},
+        {"name": "salt", "qty": "1", "unit": "tsp", "role": "seasoning"}
+      ],
+      "leftover_ingredients": ["bell pepper", "rice"],
+      "extras_to_buy": ["parsley"],
+      "equipment": ["pan", "knife", "cutting board"],
+      "steps": [
+        {"n": 1, "do": "Mince garlic and set aside", "why": "Prepares aromatics", "time": "~2 min"},
+        {"n": 2, "do": "Heat oil in pan over medium heat", "time": "~2 min"},
+        {"n": 3, "do": "Add chicken, cook 6-7 min per side until golden", "why": "Develops flavor and ensures doneness", "time": "~15 min"}
+      ],
+      "timing": {"prep_min": 5, "cook_min": 15, "total_min": 20},
       "servings": 2,
-      "calories": "~150",
-      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80",
-      "content": {
-        "ingredients": [
-          {"category": "primary", "items": ["1 can jackfruit"]},
-          {"category": "fat", "items": ["1 tbsp olive oil"]},
-          {"category": "seasoning", "items": ["0.5 tsp salt", "0.25 tsp black pepper"]}
-        ],
-        "steps": [
-          {
-            "instruction": "Drain the canned jackfruit in a colander and rinse thoroughly.",
-            "context": "Rinsing removes the briny taste and makes the jackfruit ready for seasoning.",
-            "time": "2 min"
-          }
-        ],
-        "equipment": ["can opener", "colander", "large skillet", "spatula"],
-        "shopping_list": ["corn tortillas", "lime", "cilantro"],
-        "variations": ["Add smoked paprika for authentic flavor", "Use coconut oil instead"],
-        "notes": ["Use young green jackfruit in brine, not ripe in syrup"]
+      "nutrition_estimate": {"kcal_per_serving": "~320", "protein_g": "~35", "carbs_g": "~3", "fat_g": "~18"},
+      "subs_and_variations": ["Use lime instead of lemon", "Add thyme for extra aroma"],
+      "dish_visualization": {
+        "image_prompt": "golden seared chicken breast with garlic and lemon in a cast iron skillet, garnished with fresh parsley, natural daylight, 45-degree angle, no text overlay",
+        "alt": "Seared chicken with garlic and lemon in skillet",
+        "source": "pending",
+        "status": "pending"
       },
-      "nutrition": "~150 kcal, P: ~2g, C: ~25g, F: ~6g"
+      "notes": ["Chicken is done when internal temp reaches 165°F", "Let rest 3 min before serving"]
     }
   ]
 }`
@@ -183,7 +187,8 @@ Format:
     console.log("Generating dish images...");
     for (const recipe of recipes) {
       try {
-        const imagePrompt = `A professional food photography shot of ${recipe.title}. ${recipe.summary}. High quality, appetizing, well-plated, natural lighting, no text overlays.`;
+        const imagePrompt = recipe.dish_visualization?.image_prompt || 
+          `A professional food photography shot of ${recipe.title}. ${recipe.summary}. High quality, appetizing, well-plated, natural lighting, no text overlays.`;
         
         const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -208,21 +213,36 @@ Format:
           const imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
           
           if (imageUrl) {
-            recipe.image = imageUrl;
-            recipe.image_source = "generated:google/gemini-2.5-flash-image-preview";
-            recipe.image_alt = `Professional food photography of ${recipe.title}: ${recipe.summary}`;
+            recipe.dish_visualization = {
+              ...recipe.dish_visualization,
+              url: imageUrl,
+              source: "generated:google/gemini-2.5-flash-image-preview",
+              status: "ok"
+            };
             console.log(`Generated image for: ${recipe.title}`);
           } else {
-            console.log(`No image in response for: ${recipe.title}, keeping fallback`);
-            recipe.image_source = recipe.image ? `search:unsplash.com` : "unavailable";
+            console.log(`No image in response for: ${recipe.title}`);
+            recipe.dish_visualization = {
+              ...recipe.dish_visualization,
+              source: "unavailable",
+              status: "unavailable"
+            };
           }
         } else {
           console.log(`Image generation failed for: ${recipe.title}, status: ${imageResponse.status}`);
-          recipe.image_source = recipe.image ? `search:unsplash.com` : "unavailable";
+          recipe.dish_visualization = {
+            ...recipe.dish_visualization,
+            source: "unavailable",
+            status: "unavailable"
+          };
         }
       } catch (imageError) {
         console.error(`Image generation error for ${recipe.title}:`, imageError);
-        recipe.image_source = recipe.image ? `search:unsplash.com` : "unavailable";
+        recipe.dish_visualization = {
+          ...recipe.dish_visualization,
+          source: "unavailable",
+          status: "unavailable"
+        };
       }
     }
 

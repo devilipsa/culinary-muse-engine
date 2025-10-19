@@ -1,32 +1,54 @@
-export interface RecipeContent {
-  ingredients: {
-    category: string;
-    items: string[];
-  }[];
-  steps: {
-    instruction: string;
-    context: string;
-    time: string;
-  }[];
-  notes?: string[];
-  variations?: string[];
-  equipment?: string[];
-  shopping_list?: string[];
+export interface SelectedIngredient {
+  name: string;
+  qty: string;
+  unit: string;
+  role: "primary" | "supporting" | "aromatic" | "acid" | "fat" | "seasoning";
+}
+
+export interface RecipeStep {
+  n: number;
+  do: string;
+  why?: string;
+  time: string;
+}
+
+export interface Timing {
+  prep_min: number;
+  cook_min: number;
+  total_min: number;
+}
+
+export interface NutritionEstimate {
+  kcal_per_serving: string;
+  protein_g: string;
+  carbs_g: string;
+  fat_g: string;
+}
+
+export interface DishVisualization {
+  image_prompt: string;
+  alt: string;
+  source: string;
+  status: "ok" | "unavailable";
+  url?: string;
 }
 
 export interface Recipe {
   id: string;
   title: string;
   summary: string;
-  time: string;
+  selected_ingredients: SelectedIngredient[];
+  leftover_ingredients: string[];
+  extras_to_buy: string[];
+  equipment: string[];
+  steps: RecipeStep[];
+  timing: Timing;
   servings: number;
-  calories: string;
-  image?: string;
-  image_source?: string; // "generated:<model_name>" or "search:<domain>" or "unavailable"
-  image_alt?: string;
-  content: RecipeContent;
+  nutrition_estimate: NutritionEstimate;
+  subs_and_variations: string[];
+  dish_visualization: DishVisualization;
+  notes: string[];
   popularity_score: number;
-  nutrition?: string;
 }
 
 export interface Session {
