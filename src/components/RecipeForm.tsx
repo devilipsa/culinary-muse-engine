@@ -25,15 +25,25 @@ export const RecipeForm = ({ onSubmit, isLoading }: RecipeFormProps) => {
   const handleAutoCorrect = async () => {
     if (!ingredients.trim()) return;
     
+    console.log('Starting auto-correct for:', ingredients);
     setIsAutoCorrecting(true);
     try {
       const { data, error } = await supabase.functions.invoke('auto-correct-ingredients', {
         body: { ingredients: ingredients.trim() }
       });
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      console.log('Auto-correct response:', { data, error });
 
+      if (error) {
+        console.error('Supabase invocation error:', error);
+        throw error;
+      }
+      if (data?.error) {
+        console.error('Function returned error:', data.error);
+        throw new Error(data.error);
+      }
+
+      console.log('Corrected ingredients:', data.corrected);
       setIngredients(data.corrected);
       setHasAutoCorrected(true);
       

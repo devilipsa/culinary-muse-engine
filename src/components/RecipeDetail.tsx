@@ -196,10 +196,10 @@ export function RecipeDetail({ recipe, onShare, showShareButton = true }: Recipe
       {/* Notes */}
       {recipe.notes.length > 0 && (
         <div className="mb-8 space-y-3 p-4 border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-950/20 rounded-r-lg">
-          <h3 className="text-lg font-semibold">📝 Chef's Notes</h3>
+          <h3 className="text-lg font-semibold text-orange-900 dark:text-orange-100">📝 Chef's Notes</h3>
           <ul className="space-y-2">
             {recipe.notes.map((note, idx) => (
-              <li key={idx} className="text-sm leading-relaxed">
+              <li key={idx} className="text-sm leading-relaxed text-orange-800 dark:text-orange-200">
                 • {note}
               </li>
             ))}
