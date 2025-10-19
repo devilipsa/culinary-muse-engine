@@ -22,6 +22,8 @@ export interface Recipe {
   servings: number;
   calories: string;
   image?: string;
+  image_source?: string; // "generated:<model_name>" or "search:<domain>" or "unavailable"
+  image_alt?: string;
   content: RecipeContent;
   popularity_score: number;
   nutrition?: string;

@@ -179,7 +179,54 @@ Format:
     
     console.log(`Successfully generated ${recipes.length} recipes`);
 
-    // Step 2: Calculate popularity scores
+    // Step 2: Generate dish visualization images
+    console.log("Generating dish images...");
+    for (const recipe of recipes) {
+      try {
+        const imagePrompt = `A professional food photography shot of ${recipe.title}. ${recipe.summary}. High quality, appetizing, well-plated, natural lighting, no text overlays.`;
+        
+        const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash-image-preview",
+            messages: [
+              {
+                role: "user",
+                content: imagePrompt
+              }
+            ],
+            modalities: ["image", "text"]
+          }),
+        });
+
+        if (imageResponse.ok) {
+          const imageData = await imageResponse.json();
+          const imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+          
+          if (imageUrl) {
+            recipe.image = imageUrl;
+            recipe.image_source = "generated:google/gemini-2.5-flash-image-preview";
+            recipe.image_alt = `Professional food photography of ${recipe.title}: ${recipe.summary}`;
+            console.log(`Generated image for: ${recipe.title}`);
+          } else {
+            console.log(`No image in response for: ${recipe.title}, keeping fallback`);
+            recipe.image_source = recipe.image ? `search:unsplash.com` : "unavailable";
+          }
+        } else {
+          console.log(`Image generation failed for: ${recipe.title}, status: ${imageResponse.status}`);
+          recipe.image_source = recipe.image ? `search:unsplash.com` : "unavailable";
+        }
+      } catch (imageError) {
+        console.error(`Image generation error for ${recipe.title}:`, imageError);
+        recipe.image_source = recipe.image ? `search:unsplash.com` : "unavailable";
+      }
+    }
+
+    // Step 3: Calculate popularity scores
     const scoringResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {

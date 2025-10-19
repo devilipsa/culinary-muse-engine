@@ -51,11 +51,18 @@ export const RecipeDetail = ({ recipe, onShare, showShareButton = true }: Recipe
 
       {/* Recipe Image */}
       {recipe.image && (
-        <img
-          src={recipe.image}
-          alt={recipe.title}
-          className="w-full h-64 object-cover rounded-lg mb-8"
-        />
+        <div className="mb-8">
+          <img
+            src={recipe.image}
+            alt={recipe.image_alt || recipe.title}
+            className="w-full h-64 object-cover rounded-lg"
+          />
+          {recipe.image_source && (
+            <p className="text-xs text-muted-foreground mt-1 italic">
+              Source: {recipe.image_source}
+            </p>
+          )}
+        </div>
       )}
 
       {/* Selected Ingredients */}
