@@ -75,10 +75,18 @@ Deno.serve(async (req) => {
 For each recipe, provide:
 - title: A catchy, descriptive name
 - summary: A one-line description (max 90 characters)
+- time: Total cooking time (e.g., "22 min", "1 hour 15 min")
+- servings: Number of servings (integer)
+- calories: Approximate calories per serving (e.g., "~150")
+- image: A placeholder image URL from unsplash (food photography, relevant to the dish)
 - content: An object with:
-  - ingredients: Array of ingredient strings with measurements
-  - steps: Array of detailed cooking instruction strings
-  - notes: Optional array of tips, variations, or serving suggestions
+  - ingredients: Array of objects with "category" (primary/fat/seasoning/vegetable/etc) and "items" array
+  - steps: Array of objects with "instruction", "context" (helpful tip/explanation in italic style), and "time" (e.g., "2 min", "5-10 min")
+  - equipment: Array of required equipment strings
+  - shopping_list: Array of items user might need to buy (optional items not in their ingredients)
+  - variations: Array of variation/substitution suggestions
+  - notes: Array of helpful cooking notes or tips
+- nutrition: Nutrition facts string (e.g., "~150 kcal, P: ~2g, C: ~25g, F: ~6g")
 
 CRITICAL: Return ONLY the raw JSON object, no markdown formatting, no code blocks, no backticks.
 
@@ -88,11 +96,29 @@ Format:
     {
       "title": "Recipe Name",
       "summary": "Brief description",
+      "time": "22 min",
+      "servings": 2,
+      "calories": "~150",
+      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80",
       "content": {
-        "ingredients": ["ingredient 1", "ingredient 2"],
-        "steps": ["step 1", "step 2"],
-        "notes": ["optional note"]
-      }
+        "ingredients": [
+          {"category": "primary", "items": ["1 can jackfruit"]},
+          {"category": "fat", "items": ["1 tbsp olive oil"]},
+          {"category": "seasoning", "items": ["0.5 tsp salt", "0.25 tsp black pepper"]}
+        ],
+        "steps": [
+          {
+            "instruction": "Drain the canned jackfruit in a colander and rinse thoroughly.",
+            "context": "Rinsing removes the briny taste and makes the jackfruit ready for seasoning.",
+            "time": "2 min"
+          }
+        ],
+        "equipment": ["can opener", "colander", "large skillet", "spatula"],
+        "shopping_list": ["corn tortillas", "lime", "cilantro"],
+        "variations": ["Add smoked paprika for authentic flavor", "Use coconut oil instead"],
+        "notes": ["Use young green jackfruit in brine, not ripe in syrup"]
+      },
+      "nutrition": "~150 kcal, P: ~2g, C: ~25g, F: ~6g"
     }
   ]
 }`
