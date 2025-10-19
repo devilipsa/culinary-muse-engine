@@ -4,6 +4,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Wand2, Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface RecipeFormProps {
   onSubmit: (ingredients: string, preferences: string, nSuggestions: number) => void;
@@ -14,12 +18,51 @@ export const RecipeForm = ({ onSubmit, isLoading }: RecipeFormProps) => {
   const [ingredients, setIngredients] = useState("");
   const [preferences, setPreferences] = useState("");
   const [nSuggestions, setNSuggestions] = useState<number>(5);
+  const [isAutoCorrecting, setIsAutoCorrecting] = useState(false);
+  const [hasAutoCorrected, setHasAutoCorrected] = useState(false);
+  const { toast } = useToast();
+
+  const handleAutoCorrect = async () => {
+    if (!ingredients.trim()) return;
+    
+    setIsAutoCorrecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('auto-correct-ingredients', {
+        body: { ingredients: ingredients.trim() }
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      setIngredients(data.corrected);
+      setHasAutoCorrected(true);
+      
+      toast({
+        title: 'Ingredients Auto-Corrected!',
+        description: 'Your ingredients have been cleaned up and normalized',
+      });
+    } catch (error: any) {
+      console.error('Auto-correct error:', error);
+      toast({
+        title: 'Auto-Correct Failed',
+        description: error.message || 'Failed to auto-correct ingredients',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAutoCorrecting(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (ingredients.trim()) {
       onSubmit(ingredients, preferences, nSuggestions);
     }
+  };
+
+  const handleIngredientsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setIngredients(e.target.value);
+    setHasAutoCorrected(false);
   };
 
   return (
@@ -33,17 +76,36 @@ export const RecipeForm = ({ onSubmit, isLoading }: RecipeFormProps) => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <Label htmlFor="ingredients" className="text-foreground font-semibold mb-2 block">
-            Ingredients *
-          </Label>
+          <div className="flex items-center justify-between mb-2">
+            <Label htmlFor="ingredients" className="text-foreground font-semibold">
+              Ingredients *
+            </Label>
+            {hasAutoCorrected && (
+              <Badge variant="secondary" className="gap-1">
+                <Check className="w-3 h-3" />
+                Auto-corrected
+              </Badge>
+            )}
+          </div>
           <Textarea
             id="ingredients"
             placeholder="e.g., chicken, rice, tomatoes..."
             value={ingredients}
-            onChange={(e) => setIngredients(e.target.value)}
+            onChange={handleIngredientsChange}
             className="min-h-[120px] bg-background border-border text-foreground placeholder:text-muted-foreground resize-none"
             required
           />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2 gap-2"
+            onClick={handleAutoCorrect}
+            disabled={isAutoCorrecting || !ingredients.trim()}
+          >
+            <Wand2 className="w-4 h-4" />
+            {isAutoCorrecting ? 'Correcting...' : 'Auto-Correct Ingredients'}
+          </Button>
         </div>
 
         <div>
