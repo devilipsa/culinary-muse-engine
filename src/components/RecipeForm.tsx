@@ -131,7 +131,7 @@ export const RecipeForm = ({ onSubmit, isLoading }: RecipeFormProps) => {
           />
         </div>
 
-        <div style="display: none;">
+        <div hidden>
           <Label htmlFor="n-suggestions" className="text-foreground font-semibold mb-2 block">
             Number of Suggestions
           </Label>
